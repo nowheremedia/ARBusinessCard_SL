@@ -1,0 +1,175 @@
+
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script> 
+<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.1/dist/mindar-image-aframe.prod.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wdth,wght@75,700&display=swap" rel="stylesheet">
+<script> 
+
+      AFRAME.registerComponent('click-link', {
+    schema: {url: {type: 'string'}},
+    init: function () {
+      this.el.addEventListener('click', () => {
+        window.open(this.data.url, '_blank');
+      });
+    }
+  });
+
+AFRAME.registerComponent('snap-rotate', {
+  init: function() {
+    this.startX = 0;
+    this.currentSide = 0;
+
+    const handleStart = (clientX) => {
+      this.startX = clientX;
+    };
+
+    const handleEnd = (clientX) => {
+      const diffX = clientX - this.startX;
+      if (Math.abs(diffX) > 50) {
+        if (diffX > 0) {
+          this.currentSide++; // Swipe Left
+        } else {
+          this.currentSide--; // Swipe Right
+        }
+
+        const targetAngle = this.currentSide * 90;
+        this.el.setAttribute('animation__snap', {
+          property: 'rotation',
+          to: `0 ${targetAngle} 0`,
+          dur: 1000,
+          easing: 'easeInOutSine'
+        });
+      }
+    };
+
+    // Mobile Listeners
+    window.addEventListener('touchstart', (e) => handleStart(e.touches[0].clientX));
+    window.addEventListener('touchend', (e) => handleEnd(e.changedTouches[0].clientX));
+
+    // PC/Mouse Listeners
+    window.addEventListener('mousedown', (e) => handleStart(e.clientX));
+    window.addEventListener('mouseup', (e) => handleEnd(e.clientX));
+  }
+});
+
+AFRAME.registerComponent('mytarget', {
+  init: function () {
+    const overlay = document.querySelector("#ui-overlay");
+    
+    // Listen for detection
+    this.el.addEventListener('targetFound', () => {
+      // Add a 'hidden' class for a smooth fade out
+      overlay.classList.add("hidden");
+      
+    });
+  }
+});
+
+    </script>
+<body>
+
+<a-scene mindar-image="imageTargetSrc: ./targets_snow.mind; showStats: false; uiScanning: #example-scanning-overlay;" embedded color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+  <a-assets>
+  
+  <a-asset-item id="my-model" src="260225_Logo3D.glb"></a-asset-item>
+
+  <img id="icon-web" src="NHM_Logo.png">
+  <img id="icon-insta" src="Insta_Logo.png">
+  <img id="icon-linkedin" src="LinkedIn_Logo.png">
+  <img id="icon-bluesky" src="BlueSky_Logo.png">
+
+</a-assets>
+
+<a-camera position="0 0 0" look-controls="enabled: false" cursor="fuse: false; rayOrigin: mouse;" raycaster="far: 10000; objects: .clickable"></a-camera>
+
+  <a-entity id="mytarget" mytarget mindar-image-target="targetIndex: 0" rotation="0 0 0">
+
+    <a-entity id="rotation-wrapper" rotation="90 0 0" position="0 0 0">
+         <a-gltf-model src="#my-model" 
+                  position="0 0 0" 
+                  rotation="0 0 0" 
+                  scale="4 4 4"
+                  snap-rotate>
+        </a-gltf-model>
+    </a-entity>
+
+<a-entity id="button-group" position="0 -0.6 0.1">
+    
+    <a-image src="#icon-web" class="clickable" click-link="url: https://www.nowheremedia.net/"
+             position="-0.375 0 0" width="0.2" height="0.2">
+    </a-image>
+
+    <a-image src="#icon-insta" class="clickable" click-link="url: https://www.instagram.com/nowhere.media"
+             position="-0.125 0 0" width="0.2" height="0.2">
+    </a-image>
+
+    <a-image src="#icon-linkedin" class="clickable" click-link="url: https://www.linkedin.com/company/nowheremedia/?viewAsMember=true"
+             position="0.125 0 0" width="0.2" height="0.2">
+    </a-image>
+
+    <a-image src="#icon-bluesky" class="clickable" click-link="url: https://bsky.app/profile/nowheremedia.bsky.social"
+             position="0.375 0 0" width="0.2" height="0.2">
+    </a-image>
+
+</a-entity>
+
+</a-entity>
+</a-scene>
+
+  <div id="ui-overlay">
+      <p class="overlay-text">Flip the business card to the other side</p>
+  </div>
+  
+<style>
+
+body{
+    overflow: hidden;
+}
+
+#ui-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; 
+  z-index: 999;
+  
+  display: flex;
+  justify-content: center; /* Centered horizontally */
+  align-items: flex-start; /* Stuck to the top */
+  padding-top: 40px;       /* Adds a nice gap from the top of the screen */
+  box-sizing: border-box;
+  transition: opacity 0.8s ease-out;
+  opacity: 1;
+}
+
+.overlay-text {
+  color: white;
+  font-size: clamp(18px, 5vw, 32px); 
+  font-family: 'Noto Sans';
+  font-weight: 700;
+  font-variation-settings: "wdth" 75;
+  line-height: 1.1;
+  text-align: center;       /* Ensures text lines center within the box */
+  max-width: 90%; 
+  padding: 15px 25px;       /* Wider padding for a "pill" look */
+  pointer-events: none;
+}
+
+
+#ui-overlay.hidden {
+  opacity: 0;
+}
+
+</style>
+
+</body>
+</head>
+
+</html>
