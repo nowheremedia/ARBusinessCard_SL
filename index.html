@@ -14,6 +14,7 @@
         overflow: hidden;
       }
 
+      /* OVERLAY 1: Flip Card (Starts visible, hides on target found) */
       #ui-overlay {
         position: fixed;
         top: 0;
@@ -31,6 +32,22 @@
         opacity: 1;
       }
 
+      /* OVERLAY 2: Swipe Prompt (Starts hidden, shows on target found, hides on swipe) */
+      #swipe-overlay {
+        position: fixed;
+        bottom: 10%; /* Positions it near the bottom */
+        left: 0;
+        width: 100%;
+        pointer-events: none; 
+        z-index: 999;
+        display: flex;
+        justify-content: center; 
+        align-items: center; 
+        box-sizing: border-box;
+        transition: opacity 0.8s ease-out;
+        opacity: 0; /* Hidden by default */
+      }
+
       .overlay-text {
         color: white;
         font-size: clamp(18px, 5vw, 32px); 
@@ -42,14 +59,15 @@
         max-width: 90%; 
         padding: 15px 25px;      
         pointer-events: none;
-        /* Optional: Ein leichter Hintergrund, damit der Text auf der Kamera gut lesbar ist */
         background: rgba(0, 0, 0, 0.4); 
         border-radius: 20px;
       }
 
-      #ui-overlay.hidden {
-        opacity: 0;
-      }
+      /* Utility classes for toggling visibility */
+      #ui-overlay.hidden { opacity: 0; }
+      #swipe-overlay.visible { opacity: 1; }
+      #swipe-overlay.hidden { opacity: 0; }
+      
     </style>
 
     <script> 
@@ -66,6 +84,7 @@
         init: function() {
           this.startX = 0;
           this.currentSide = 0;
+          this.hasSwiped = false; // Tracks if user has done the action
 
           const handleStart = (clientX) => {
             this.startX = clientX;
@@ -74,6 +93,15 @@
           const handleEnd = (clientX) => {
             const diffX = clientX - this.startX;
             if (Math.abs(diffX) > 50) {
+              
+              // NEW: Hide the "Swipe the logo" text on first successful swipe
+              if (!this.hasSwiped) {
+                const swipeOverlay = document.querySelector("#swipe-overlay");
+                if(swipeOverlay) swipeOverlay.classList.remove("visible");
+                if(swipeOverlay) swipeOverlay.classList.add("hidden");
+                this.hasSwiped = true;
+              }
+
               if (diffX > 0) {
                 this.currentSide++; // Swipe Left
               } else {
@@ -102,12 +130,31 @@
 
       AFRAME.registerComponent('mytarget', {
         init: function () {
-          const overlay = document.querySelector("#ui-overlay");
+          const flipOverlay = document.querySelector("#ui-overlay");
+          const swipeOverlay = document.querySelector("#swipe-overlay");
+          const rotateComponent = this.el.querySelector('[snap-rotate]');
           
           // Listen for detection
           this.el.addEventListener('targetFound', () => {
-            // Add a 'hidden' class for a smooth fade out
-            overlay.classList.add("hidden");
+            // Hide "Flip the card"
+            flipOverlay.classList.add("hidden");
+            
+            // Show "Swipe the logo!" ONLY if they haven't swiped yet
+            // Check the hasSwiped variable from the child's snap-rotate component
+            if (rotateComponent && rotateComponent.components['snap-rotate']) {
+               if (!rotateComponent.components['snap-rotate'].hasSwiped) {
+                  swipeOverlay.classList.add("visible");
+               }
+            } else {
+               // Fallback if component isn't fully loaded yet
+               swipeOverlay.classList.add("visible");
+            }
+          });
+
+          // Optional: If they lose tracking before swiping, hide the swipe text again
+          this.el.addEventListener('targetLost', () => {
+             swipeOverlay.classList.remove("visible");
+             // (We don't bring "Flip the card" back, but you could if you wanted to)
           });
         }
       });
@@ -115,8 +162,9 @@
   </head>
 
   <body>
-<a-scene mindar-image="imageTargetSrc: ./targets_snow.mind; showStats: false; filterMinCF: 0.001; filterBeta: 0.01;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
-  <a-assets>
+    <a-scene mindar-image="imageTargetSrc: ./targets_snow.mind; showStats: false; filterMinCF: 0.001; filterBeta: 0.01;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+      
+      <a-assets>
         <a-asset-item id="my-model" src="260225_Logo3D.glb"></a-asset-item>
         <img id="icon-web" src="NHM_Logo.png">
         <img id="icon-insta" src="Insta_Logo.png">
@@ -145,11 +193,9 @@
     <div id="ui-overlay">
         <p class="overlay-text">Flip the business card to the other side.</p>
     </div>
+
+    <div id="swipe-overlay">
+        <p class="overlay-text">Swipe the logo!</p>
+    </div>
   </body>
 </html>
-
-
-
-
-
-
