@@ -14,6 +14,7 @@
         overflow: hidden;
       }
 
+      /* OVERLAY 1: Flip Card (Starts visible, hides on target found) */
       #ui-overlay {
         position: fixed;
         top: 0;
@@ -50,6 +51,7 @@
     </style>
 
     <script> 
+      // Globale Variable, die sich merkt, ob schon gewischt wurde
       window.hasSwiped = false;
 
       AFRAME.registerComponent('click-link', {
@@ -74,6 +76,7 @@
             const diffX = clientX - this.startX;
             if (Math.abs(diffX) > 50) {
               
+              // Versteckt das 3D-Text-Objekt beim ersten erfolgreichen Wischen permanent
               if (!window.hasSwiped) {
                 const swipePrompt3D = document.querySelector("#swipe-prompt-3d");
                 if (swipePrompt3D) {
@@ -89,18 +92,20 @@
               }
 
               const targetAngle = this.currentSide * 90;
-              
               this.el.setAttribute('animation__snap', {
                 property: 'rotation',
                 to: `0 ${targetAngle} 0`,
-                dur: 1200,                  
-                easing: 'easeInOutCubic'    
+                dur: 1000,
+                easing: 'easeInOutSine'
               });
             }
           };
 
+          // Mobile Listeners
           window.addEventListener('touchstart', (e) => handleStart(e.touches[0].clientX));
           window.addEventListener('touchend', (e) => handleEnd(e.changedTouches[0].clientX));
+
+          // PC/Mouse Listeners
           window.addEventListener('mousedown', (e) => handleStart(e.clientX));
           window.addEventListener('mouseup', (e) => handleEnd(e.clientX));
         }
@@ -111,14 +116,18 @@
           const flipOverlay = document.querySelector("#ui-overlay");
           const swipePrompt3D = document.querySelector("#swipe-prompt-3d");
           
+          // Listen for detection
           this.el.addEventListener('targetFound', () => {
+            // Verstecke "Flip the card"
             flipOverlay.classList.add("hidden");
             
+            // Zeige das 3D "Swipe the logo!", falls noch nicht gewischt wurde
             if (!window.hasSwiped && swipePrompt3D) {
                swipePrompt3D.setAttribute("visible", "true");
             }
           });
 
+          // Verstecke den 3D-Text wieder, wenn die Kamera die Karte verliert
           this.el.addEventListener('targetLost', () => {
              if (swipePrompt3D) {
                swipePrompt3D.setAttribute("visible", "false");
@@ -130,6 +139,7 @@
   </head>
 
   <body>
+
     <a-scene mindar-image="imageTargetSrc: ./targets_snow.mind; showStats: false; filterMinCF: 0.001; filterBeta: 0.01;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
       
       <a-assets>
@@ -144,16 +154,13 @@
 
       <a-entity id="mytarget" mytarget mindar-image-target="targetIndex: 0" rotation="0 0 0">
         
-        <a-entity id="swipe-prompt-3d" position="0 1.2 0.6" visible="false">
-            <a-plane color="#000000" opacity="0.6" width="1.2" height="0.3" position="0 0 -0.01" material="shader: flat; transparent: true"></a-plane>
-            <a-text value="Swipe the logo!" align="center" color="#FFFFFF" font="kelsonsans" width="1.2" wrap-count="16"></a-text>
+        <a-entity id="swipe-prompt-3d" position="0 1.5 0.2" visible="false">
+            <a-plane color="#000000" opacity="0.6" width="1.8" height="0.4" position="0 0 -0.01" material="shader: flat; transparent: true"></a-plane>
+            <a-text value="Swipe the logo!" align="center" color="#FFFFFF" font="kelsonsans" width="4"></a-text>
         </a-entity>
 
-        <a-entity id="rotation-wrapper" rotation="90 0 0" 
-                  animation="property: position; dir: alternate; dur: 3000; easing: easeInOutSine; loop: true; from: 0 0 0.4; to: 0 0 0.55">
-             
+        <a-entity id="rotation-wrapper" rotation="90 0 0" position="0 0 0">
              <a-gltf-model src="#my-model" position="0 0 0" rotation="0 0 0" scale="4 4 4" snap-rotate></a-gltf-model>
-             
         </a-entity>
 
         <a-entity id="button-group" position="0 -0.6 0.1">
