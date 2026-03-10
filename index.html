@@ -14,21 +14,6 @@
         overflow: hidden;
       }
 
-      /* DEBUG OVERLAY */
-      #debug-overlay {
-        position: fixed;
-        top: 10px;
-        left: 10px;
-        background: red;
-        color: white;
-        font-family: monospace;
-        font-size: 12px;
-        padding: 5px 10px;
-        z-index: 9999;
-        border-radius: 5px;
-        pointer-events: none;
-      }
-
       /* OVERLAY 1: Flip Card (Starts visible, hides on target found) */
       #ui-overlay {
         position: fixed;
@@ -107,11 +92,13 @@
               }
 
               const targetAngle = this.currentSide * 90;
+              
+              // UPDATED: Softer, more pronounced ease-in-out rotation
               this.el.setAttribute('animation__snap', {
                 property: 'rotation',
                 to: `0 ${targetAngle} 0`,
-                dur: 1000,
-                easing: 'easeInOutSine'
+                dur: 1200,                  // Slightly longer for a softer feel
+                easing: 'easeInOutCubic'    // Stronger ease-in and out curve
               });
             }
           };
@@ -154,10 +141,6 @@
   </head>
 
   <body>
-    <div id="debug-overlay">
-      Debug: filterMinCF 0.001 | filterBeta 0.01
-    </div>
-
     <a-scene mindar-image="imageTargetSrc: ./targets_snow.mind; showStats: false; filterMinCF: 0.001; filterBeta: 0.01;" color-space="sRGB" renderer="colorManagement: true, physicallyCorrectLights" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
       
       <a-assets>
@@ -172,13 +155,16 @@
 
       <a-entity id="mytarget" mytarget mindar-image-target="targetIndex: 0" rotation="0 0 0">
         
-        <a-entity id="swipe-prompt-3d" position="0 1.5 0.2" visible="false">
+        <a-entity id="swipe-prompt-3d" position="0 1.5 0.35" visible="false">
             <a-plane color="#000000" opacity="0.6" width="1.8" height="0.4" position="0 0 -0.01" material="shader: flat; transparent: true"></a-plane>
             <a-text value="Swipe the logo!" align="center" color="#FFFFFF" font="kelsonsans" width="4"></a-text>
         </a-entity>
 
-        <a-entity id="rotation-wrapper" rotation="90 0 0" position="0 0 0">
+        <a-entity id="rotation-wrapper" rotation="90 0 0" 
+                  animation="property: position; dir: alternate; dur: 3000; easing: easeInOutSine; loop: true; from: 0 0 0.1; to: 0 0 0.25">
+             
              <a-gltf-model src="#my-model" position="0 0 0" rotation="0 0 0" scale="4 4 4" snap-rotate></a-gltf-model>
+             
         </a-entity>
 
         <a-entity id="button-group" position="0 -0.6 0.1">
