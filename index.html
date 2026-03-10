@@ -47,23 +47,6 @@
         opacity: 1;
       }
 
-      /* OVERLAY 2: Swipe Prompt (Zentriert, leicht über der Mitte) */
-      #swipe-overlay {
-        position: fixed;
-        top: 35%; /* Setzt den Text leicht über die Bildschirmmitte */
-        left: 50%;
-        transform: translate(-50%, -50%); /* Zentriert die Box exakt */
-        width: 100%;
-        pointer-events: none; 
-        z-index: 999;
-        display: flex;
-        justify-content: center; 
-        align-items: center; 
-        box-sizing: border-box;
-        transition: opacity 0.5s ease-out;
-        opacity: 0; /* Standardmäßig unsichtbar */
-      }
-
       .overlay-text {
         color: white;
         font-size: clamp(18px, 5vw, 32px); 
@@ -75,14 +58,11 @@
         max-width: 90%; 
         padding: 15px 25px;      
         pointer-events: none;
-        background: rgba(0, 0, 0, 0.6); /* Leicht dunkler gemacht für besseren Kontrast */
+        background: rgba(0, 0, 0, 0.6); 
         border-radius: 20px;
       }
 
-      /* Utility classes for toggling visibility */
       #ui-overlay.hidden { opacity: 0; }
-      #swipe-overlay.visible { opacity: 1; }
-      
     </style>
 
     <script> 
@@ -111,10 +91,12 @@
             const diffX = clientX - this.startX;
             if (Math.abs(diffX) > 50) {
               
-              // Versteckt den Text beim ersten erfolgreichen Wischen permanent
+              // Versteckt das 3D-Text-Objekt beim ersten erfolgreichen Wischen permanent
               if (!window.hasSwiped) {
-                const swipeOverlay = document.querySelector("#swipe-overlay");
-                if(swipeOverlay) swipeOverlay.classList.remove("visible");
+                const swipePrompt3D = document.querySelector("#swipe-prompt-3d");
+                if (swipePrompt3D) {
+                  swipePrompt3D.setAttribute("visible", "false");
+                }
                 window.hasSwiped = true;
               }
 
@@ -147,22 +129,24 @@
       AFRAME.registerComponent('mytarget', {
         init: function () {
           const flipOverlay = document.querySelector("#ui-overlay");
-          const swipeOverlay = document.querySelector("#swipe-overlay");
+          const swipePrompt3D = document.querySelector("#swipe-prompt-3d");
           
           // Listen for detection
           this.el.addEventListener('targetFound', () => {
             // Verstecke "Flip the card"
             flipOverlay.classList.add("hidden");
             
-            // Zeige "Swipe the logo!", falls noch nicht gewischt wurde
-            if (!window.hasSwiped) {
-               swipeOverlay.classList.add("visible");
+            // Zeige das 3D "Swipe the logo!", falls noch nicht gewischt wurde
+            if (!window.hasSwiped && swipePrompt3D) {
+               swipePrompt3D.setAttribute("visible", "true");
             }
           });
 
-          // Verstecke den Swipe-Text wieder, wenn die Kamera die Karte verliert
+          // Verstecke den 3D-Text wieder, wenn die Kamera die Karte verliert
           this.el.addEventListener('targetLost', () => {
-             swipeOverlay.classList.remove("visible");
+             if (swipePrompt3D) {
+               swipePrompt3D.setAttribute("visible", "false");
+             }
           });
         }
       });
@@ -188,6 +172,11 @@
 
       <a-entity id="mytarget" mytarget mindar-image-target="targetIndex: 0" rotation="0 0 0">
         
+        <a-entity id="swipe-prompt-3d" position="0 1.5 0.2" visible="false">
+            <a-plane color="#000000" opacity="0.6" width="1.8" height="0.4" position="0 0 -0.01" material="shader: flat; transparent: true"></a-plane>
+            <a-text value="Swipe the logo!" align="center" color="#FFFFFF" font="kelsonsans" width="4"></a-text>
+        </a-entity>
+
         <a-entity id="rotation-wrapper" rotation="90 0 0" position="0 0 0">
              <a-gltf-model src="#my-model" position="0 0 0" rotation="0 0 0" scale="4 4 4" snap-rotate></a-gltf-model>
         </a-entity>
@@ -206,8 +195,5 @@
         <p class="overlay-text">Flip the business card to the other side.</p>
     </div>
 
-    <div id="swipe-overlay">
-        <p class="overlay-text">Swipe the logo!</p>
-    </div>
   </body>
 </html>
