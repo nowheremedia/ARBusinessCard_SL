@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Business Card AR - Snow</title>
 
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script> 
@@ -9,12 +9,20 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wdth,wght@75,700&display=swap" rel="stylesheet">
 
     <style>
-      body {
+      /* FIX 2: CSS Screen Lock. Prevents the address bar from triggering the corner-camera bug */
+      html, body {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
         margin: 0;
+        padding: 0;
         overflow: hidden;
+        background-color: #000; /* Hides white flashes during loading */
       }
 
-      /* OVERLAY 1: Flip Card (Starts visible, hides on target found) */
+      /* OVERLAY 1: Flip Card */
       #ui-overlay {
         position: fixed;
         top: 0;
@@ -25,15 +33,14 @@
         z-index: 999;
         display: flex;
         justify-content: center; 
-        align-items: flex-start; /* Stuck to the top */
-        padding-top: 40px;       /* Gap from the top */
+        align-items: flex-start; 
+        padding-top: 40px;       
         box-sizing: border-box;
         transition: opacity 0.8s ease-out;
         opacity: 1;
-        font-family: 'Noto Sans', sans-serif;
       }
 
-      /* OVERLAY 2: Swipe Prompt (Matches ui-overlay exactly, but starts hidden) */
+      /* OVERLAY 2: Swipe Prompt */
       #swipe-overlay {
         position: fixed;
         top: 0;
@@ -44,12 +51,11 @@
         z-index: 999;
         display: flex;
         justify-content: center; 
-        align-items: flex-start; /* Stuck to the top exactly like the other one */
-        padding-top: 40px;       /* Exact same gap from top */
+        align-items: flex-start; 
+        padding-top: 40px;       
         box-sizing: border-box;
         transition: opacity 0.8s ease-out;
-        opacity: 0; /* Hidden by default until AR target is found */
-        font-family: 'Noto Sans', sans-serif;
+        opacity: 0; 
       }
 
       .overlay-text {
@@ -67,14 +73,27 @@
         border-radius: 20px;
       }
 
-      /* Utility classes for toggling visibility */
       #ui-overlay.hidden { opacity: 0; }
       #swipe-overlay.visible { opacity: 1; }
     </style>
 
     <script> 
-      // Globale Variable, die sich merkt, ob schon gewischt wurde
       window.hasSwiped = false;
+
+      // FIX 3: Prevents the "second scan freeze" bug when users switch apps
+      document.addEventListener("visibilitychange", () => {
+        const sceneEl = document.querySelector('a-scene');
+        if (!sceneEl) return;
+        
+        const arSystem = sceneEl.systems["mindar-image-system"];
+        if (arSystem) {
+          if (document.hidden) {
+            arSystem.stop();
+          } else {
+            arSystem.start();
+          }
+        }
+      });
 
       AFRAME.registerComponent('click-link', {
         schema: {url: {type: 'string'}},
@@ -98,7 +117,6 @@
             const diffX = clientX - this.startX;
             if (Math.abs(diffX) > 50) {
               
-              // Versteckt das 2D-Text-Objekt beim ersten erfolgreichen Wischen permanent
               if (!window.hasSwiped) {
                 const swipeOverlay = document.querySelector("#swipe-overlay");
                 if (swipeOverlay) {
@@ -123,11 +141,8 @@
             }
           };
 
-          // Mobile Listeners
           window.addEventListener('touchstart', (e) => handleStart(e.touches[0].clientX));
           window.addEventListener('touchend', (e) => handleEnd(e.changedTouches[0].clientX));
-
-          // PC/Mouse Listeners
           window.addEventListener('mousedown', (e) => handleStart(e.clientX));
           window.addEventListener('mouseup', (e) => handleEnd(e.clientX));
         }
@@ -138,18 +153,14 @@
           const flipOverlay = document.querySelector("#ui-overlay");
           const swipeOverlay = document.querySelector("#swipe-overlay");
           
-          // Listen for detection
           this.el.addEventListener('targetFound', () => {
-            // Verstecke "Flip the card"
             flipOverlay.classList.add("hidden");
             
-            // Zeige das 2D "Swipe the logo!", falls noch nicht gewischt wurde
             if (!window.hasSwiped && swipeOverlay) {
                swipeOverlay.classList.add("visible");
             }
           });
 
-          // Verstecke den 2D-Text wieder, wenn die Kamera die Karte verliert
           this.el.addEventListener('targetLost', () => {
              if (swipeOverlay) {
                swipeOverlay.classList.remove("visible");
@@ -195,7 +206,7 @@
     </div>
 
     <div id="swipe-overlay">
-        <p class="overlay-text">Swipe the 3D logo!</p>
+        <p class="overlay-text">Swipe the logo!</p>
     </div>
 
   </body>
